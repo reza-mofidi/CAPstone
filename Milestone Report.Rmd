@@ -1,0 +1,164 @@
+---
+title: "Data Sciences Capstone Project Milestone Report"
+author: "R Mofidi"
+date: "25/08/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Milestone Report
+
+### Background
+
+In the last decade people have started spending ever increasing amount of time on their mobile devices, performing a range of activities including accessing social networking sites, email, reading published contents such as books and newspapers. Typing on the go and on mobile devices can be a serious challenge. Predictive texting is crucial for easing such tasks. SwiftKey, builds a smart keyboard that makes it easier for people to type on their mobile devices, through the use of predictive texting.
+
+This capstone project involves analyzing and cleaning a large body ‘corpus’ of text documents to discover the structure in the data and how words are put together. This will form a resource from which build a predictive text product.
+
+The milestone report covers the first part of this activity which includes the following steps
+
+1-      R packages used in the project
+
+2-      The data source and downloading
+
+3-      Preliminary data analysis
+
+4-      Preprocessing steps
+
+5-      Creating NGrams and visualising the data
+
+##  R packages used in the project
+
+The following R packages were used in this project. They include the "tm" package, the "NLP" package and the "quanteda" packages. 
+```{r}
+install.packages('tm')
+install.packages('NLP')
+install.packages('quanteda')
+library (NLP)
+library(tm)
+library(quanteda)
+```
+
+## Downloading the data
+The dataset used for this project involves a alarge body of text in 4 languages including English, Finnish, German and russian. The folder containing US English text is used for further analysis "en_US. 
+
+```{r}
+if(!file.exists("~/data")){dir.create("~/data")}
+fileUrl <- "https://d396qusza40orc.cloudfront.net/dsscapstone/dataset/Coursera-SwiftKey.zip"
+download.file(fileUrl,destfile="~/data/capstone.zip")
+if(!file.exists("~/data/capstone.zip")){
+  unzip("~/data/capstone.zip", exdir="~/data")
+}
+```
+
+
+## Read the files datset
+
+This folder includes 3 large txt files including blogs, news and twitter messages. The blogs represent colloquial English, the news represents formal English and Twitter messages represent abbreviated informal English. The following table lists the file sizes in bytes, the number of words and number of words per line for each class of text file. 
+
+```{r}
+##read US English the text files 
+blogs <- readLines("~/data/final/en_US/en_US.blogs.txt", encoding="UTF-8", warn=FALSE, skipNul=TRUE)
+news <- readLines("~/data/final/en_US/en_US.news.txt", encoding="UTF-8", warn=FALSE, skipNul=TRUE)
+twitter <- readLines("~/data/final/en_US/en_US.twitter.txt", encoding="UTF-8", warn=FALSE, skipNul=TRUE)
+
+##blogs
+blog_line<- length(blogs); blogs_size<- object.size(blogs); 
+Blog_words<- sum(sapply(strsplit(blogs,"\\s+"),length))
+Bl_words_per_line<- round(Blog_words/blog_line,2)
+
+##news
+news_line<- length(news); news_size<- object.size(news); 
+News_words<- sum(sapply(strsplit(news,"\\s+"),length))
+NWS_words_per_line<- round(News_words/news_line,2)
+
+##twitter
+twitter_line<- length(twitter); twitter_size<- object.size(twitter); 
+twitter_words<- sum(sapply(strsplit(twitter,"\\s+"),length))
+twt_words_per_line<- round(twitter_words/twitter_line,2)
+
+Lines<- rbind(blog_line, news_line, twitter_line)
+Size<- rbind(blogs_size,news_size, twitter_size)
+Words<- rbind(Blog_words, News_words, twitter_words)
+Word_per_line<- rbind(Bl_words_per_line, NWS_words_per_line, twt_words_per_line)
+
+table1<- cbind(Lines, Size, Words, Word_per_line)
+row.names(table1)<- c("Blogs", "News", "Twitter")
+colnames(table1)<- c('number of lines', 'Size', 'total number of words', 'Words per line')
+table1
+```
+
+
+## Create a corpus of text for analysis
+
+
+```{r}
+if(!file.exists('~/data/final/test/')){dir.create('~/data/final/test/')}
+SampleB<- sample(blogs, round(length(blogs)*0.1))
+SampleN <- sample(news, round(length(news)*0.1))
+SampleT <- sample(twitter, round(length(twitter)*.1))
+text_sample <- c(SampleB,SampleN,SampleT)
+writeLines(text_sample,"~/data/final/test/text_sample.txt", 'test')
+sampleTst<- file.path("~/data/final", 'test')
+corpus<- VCorpus(DirSource(sampleTst))
+corpus <- tm_map(corpus, removePunctuation)
+corpus <- tm_map(corpus, removeNumbers)
+corpus <- tm_map(corpus, stripWhitespace)
+corpus <- tm_map(corpus, PlainTextDocument)
+corpusresult<-data.frame(text=unlist(sapply(corpus,'[',"content")),stringsAsFactors = FALSE)
+head(corpusresult)
+```
+
+## Simple data visualisation
+
+N-grams are a contiguus sequence of N items from a given sample of text or speech. N grams can be phenomes, syllables, letters or words. They can be unitgrams bigrams or trigrams, where the prefix N also denotes their size in the number of words. *N-grams* are essentially a probobalistic language model and are used to predict the next item in a sequene of model. N-grams are basically a n-1 Markov model. In the following example I used Ngram Tokenizer function which breaksdown the text into words when it encounters a list of specified  characters and then plotted unigrams, bigrams and trigrams by the frequency they appear in the sample curpus.  
+
+```{r}
+library(Rweka)
+library (ggplot2)
+```
+
+### Unigrams
+
+```{r, echo=true}
+unigram<-function(x) NGramTokenizer(x,Weka_control(min=1,max=1)) ## defines unigram function
+unigramtab<-TermDocumentMatrix(corpus,control=list(tokenize=unigram))
+unigramCorpus<- findFreqTerms(unigramtab, lowfreq=1000)
+unigramCorpusN<- rowSums(as.matrix(unigramtab[unigramCorpus,]))
+unigramCorpusT<- data.frame(Word=names(unigramCorpusN), frequency=unigramCorpusN)
+UnigramSort<- unigramCorpusT[order(-unigramCorpusT$frequency),]
+
+
+ggplot(UnigramSort[1:20,], aes(x=reorder(word, -frequency), y=frequency)+ labs(title = "unigrams", x= "commonest words", y="Freqeuncy"))
+```
+
+### Bigrams
+
+```{r, echo=true}
+bigram<-function(x) NGramTokenizer(x,Weka_control(min=2,max=2)) ## defines bigram function
+bigramtab<-TermDocumentMatrix(corpus,control=list(tokenize=bigram))
+bigramCorpus<- findFreqTerms(bigramtab, lowfreq=1000)
+bigramCorpusN<- rowSums(as.matrix(bigramtab[bigramCorpus,]))
+bigramCorpusT<- data.frame(Word=names(bigramCorpusN), frequency=bigramCorpusN)
+bigramSort<- bigramCorpusT[order(-bigramCorpusT$frequency),]
+
+
+ggplot(bigramSort[1:20,], aes(x=reorder(word, -frequency), y=frequency)+ labs(title = "bigrams", x= "commonest words", y="Freqeuncy"))
+```
+
+### Trigrams
+
+```{r, echo=true}
+trigram<-function(x) NGramTokenizer(x,Weka_control(min=3,max=3)) ## defines Trigram function
+
+trigramtab<-TermDocumentMatrix(corpus,control=list(tokenize=trigram))
+trigramCorpus<- findFreqTerms(trigramtab, lowfreq=1000)
+trigramCorpusN<- rowSums(as.matrix(trigramtab[trigramCorpus,]))
+trigramCorpusT<- data.frame(Word=names(trigramCorpusN), frequency=trigramCorpusN)
+trigramSort<- trigramCorpusT[order(-trigramCorpusT$frequency),]
+
+
+ggplot(trigramSort[1:20,], aes(x=reorder(word, -frequency), y=frequency)+ labs(title = "trigrams", x= "commonest words", y="Freqeuncy"))
+```

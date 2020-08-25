@@ -32,7 +32,7 @@ The milestone report covers the first part of this activity which includes the f
 ##  R packages used in the project
 
 The following R packages were used in this project. They include the "tm" package, the "NLP" package and the "quanteda" packages. 
-```{r}
+```{rm echo=FALSE}
 install.packages('tm')
 install.packages('NLP')
 install.packages('quanteda')
@@ -93,6 +93,7 @@ table1
 
 ## Create a corpus of text for analysis
 
+A corpus is language resource which cinsists of a large body of structured text which can be  analysed in order to validate linguistic rules or for NLP. 
 
 ```{r}
 if(!file.exists('~/data/final/test/')){dir.create('~/data/final/test/')}
@@ -107,8 +108,7 @@ corpus <- tm_map(corpus, removePunctuation)
 corpus <- tm_map(corpus, removeNumbers)
 corpus <- tm_map(corpus, stripWhitespace)
 corpus <- tm_map(corpus, PlainTextDocument)
-corpusresult<-data.frame(text=unlist(sapply(corpus,'[',"content")),stringsAsFactors = FALSE)
-head(corpusresult)
+return(corpus)
 ```
 
 ## Simple data visualisation
@@ -116,7 +116,8 @@ head(corpusresult)
 N-grams are a contiguus sequence of N items from a given sample of text or speech. N grams can be phenomes, syllables, letters or words. They can be unitgrams bigrams or trigrams, where the prefix N also denotes their size in the number of words. *N-grams* are essentially a probobalistic language model and are used to predict the next item in a sequene of model. N-grams are basically a n-1 Markov model. In the following example I used Ngram Tokenizer function which breaksdown the text into words when it encounters a list of specified  characters and then plotted unigrams, bigrams and trigrams by the frequency they appear in the sample curpus.  
 
 ```{r}
-library(Rweka)
+library(RWekajars)
+library(RWeka)
 library (ggplot2)
 ```
 

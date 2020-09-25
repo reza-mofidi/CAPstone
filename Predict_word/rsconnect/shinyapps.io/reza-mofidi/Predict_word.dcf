@@ -1,0 +1,12 @@
+name: Predict_word
+title: Predict_word
+username:
+account: reza-mofidi
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2881480
+bundleId: 3667839
+url: https://reza-mofidi.shinyapps.io/Predict_word/
+when: 1600982249.97288
+asMultiple: FALSE
+asStatic: FALSE
